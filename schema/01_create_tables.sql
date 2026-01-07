@@ -9,10 +9,10 @@ CREATE TABLE orders (
 );
 
 CREATE TABLE operations (
-    operation_id INT PRIMARY KEY,
+    ops_id INT PRIMARY KEY,
     order_id INT,
     warehouse VARCHAR(50),
-    process_time_hours DECIMAL(10,2),
+    proces_time_hours DECIMAL(10,2),
     delay_reason VARCHAR(50),
     FOREIGN KEY (order_id) REFERENCES orders(order_id)
 );
