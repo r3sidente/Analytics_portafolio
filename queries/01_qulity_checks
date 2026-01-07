@@ -1,0 +1,43 @@
+-- =========================
+-- DATA QUALITY CHECKS
+-- =========================
+
+-- ---------- ORDERS ----------
+-- 1. Missing order_date
+SELECT COUNT(*) AS orders_missing_date
+FROM orders
+WHERE order_date IS NULL;
+
+-- 2. Delivered before promised
+SELECT *
+FROM orders
+WHERE delivered_date < promised_date;
+
+-- 3. Delivered before order_date
+SELECT *
+FROM orders
+WHERE delivered_date IS NOT NULL
+  AND delivered_date < order_date;
+
+
+-- ---------- OPERATIONS ----------
+-- 4. FK violations (operations without order)
+SELECT op.*
+FROM operations op
+LEFT JOIN orders o
+  ON o.order_id = op.order_id
+WHERE o.order_id IS NULL;
+
+-- 5. Invalid process time
+SELECT *
+FROM operations
+WHERE proces_time_hours IS NULL
+   OR proces_time_hours <= 0;
+
+-- 6. Delay reason on non-delayed orders
+SELECT *
+FROM operations op
+JOIN orders o
+  ON o.order_id = op.order_id
+WHERE o.delivered_date <= o.promised_date
+  AND op.delay_reasons IS NOT NULL;
