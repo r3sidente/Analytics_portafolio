@@ -5,13 +5,7 @@
 
 DELETE FROM operations;
 
-WITH warehouses AS (
-  SELECT 'WH-Perth' AS warehouse
-  UNION ALL SELECT 'WH-Sydney'
-  UNION ALL SELECT 'WH-Melbourne'
-  UNION ALL SELECT 'WH-Brisbane'
-),
-orders_enriched AS (
+WITH orders_enriched AS (
   SELECT
     o.order_id,
     o.order_date,
@@ -30,11 +24,13 @@ ops_rows AS (
     ROW_NUMBER() OVER (ORDER BY oe.order_id) AS ops_id,
     oe.order_id,
 
-    -- Random warehouse from list
-    (SELECT w.warehouse
-     FROM warehouses w
-     ORDER BY abs(random())
-     LIMIT 1) AS warehouse,
+    -- TRUE per-row random warehouse (no optimizer caching)
+    CASE (abs(random()) % 4)
+      WHEN 0 THEN 'WH-Perth'
+      WHEN 1 THEN 'WH-Sydney'
+      WHEN 2 THEN 'WH-Melbourne'
+      ELSE 'WH-Brisbane'
+    END AS warehouse,
 
     -- Process time (hours): cycle time in hours + noise, min 1.00
     ROUND(
@@ -50,15 +46,13 @@ ops_rows AS (
     CASE
       WHEN oe.is_delayed = 0 THEN NULL
       ELSE (
-        SELECT reason FROM (
-          SELECT 'Carrier delay' AS reason
-          UNION ALL SELECT 'Warehouse backlog'
-          UNION ALL SELECT 'Stockout'
-          UNION ALL SELECT 'Address issue'
-          UNION ALL SELECT 'Weather'
-        )
-        ORDER BY abs(random())
-        LIMIT 1
+        CASE (abs(random()) % 5)
+          WHEN 0 THEN 'Carrier delay'
+          WHEN 1 THEN 'Warehouse backlog'
+          WHEN 2 THEN 'Stockout'
+          WHEN 3 THEN 'Address issue'
+          ELSE 'Weather'
+        END
       )
     END AS delay_reasons
 
@@ -72,7 +66,6 @@ SELECT
   proces_time_hours,
   delay_reasons
 FROM ops_rows;
-
 
 
 
